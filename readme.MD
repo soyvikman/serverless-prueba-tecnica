@@ -1,109 +1,180 @@
-# Reto Técnico Rimac - Backend Serverless
+# Sistema de Gestión de Citas Médicas - Rimac
 
-Este proyecto implementa una arquitectura backend moderna usando AWS Lambda, DynamoDB, SNS, SQS y EventBridge. Se sigue arquitectura limpia, principios SOLID y patrones como Repository y Facade.
-
----
-
-## Tecnologías y servicios usados
-
-- Node.js + TypeScript
-- AWS Lambda
-- API Gateway
-- DynamoDB
-- SNS
-- SQS
-- EventBridge
-- Serverless Framework v4
-
----
-
-## Escenario del reto
-
-1. Se recibe una cita vía HTTP (`POST /appointment`).
-2. Se valida y guarda en DynamoDB.
-3. Se publica un evento en SNS con atributo `countryISO`.
-4. SNS redirige el mensaje a la cola `SQS_PE` o `SQS_CL`.
-5. Lambdas `appointment_pe` / `appointment_cl` simulan guardado en RDS.
-6. Se publica un evento `CitaProcesada` en EventBridge.
-7. Otra Lambda actualiza el estado de la cita a `"completed"` en DynamoDB.
-
----
+## Descripción General
+Sistema serverless para la gestión de citas médicas, implementado con Clean Architecture y desplegado en AWS. El sistema permite crear y consultar citas médicas, con procesamiento asíncrono por país (Perú y Chile).
 
 ## Arquitectura
 
-```txt
-[POST /appointment] → Lambda handler
-  └→ CreateAppointment (use case)
-      └→ Appointment.create() (entidad dominio)
-      └→ AppointmentInfraFacade
-          ├→ repo.save()         → DynamoDB
-          └→ publisher.publish() → SNS
+### Principios de Diseño
+- **Clean Architecture**: Separación clara de responsabilidades en capas
+- **Domain-Driven Design**: Modelado basado en el dominio de negocio
+- **Event-Driven Architecture**: Procesamiento asíncrono mediante eventos
 
-SNS → [Filtro por countryISO] → SQS_PE / SQS_CL
-  → Lambda appointment_pe / appointment_cl
-      ├→ Simula guardar en RDS (log)
-      └→ Publica evento en EventBridge
+### Capas de la Arquitectura
 
-EventBridge → SQS_UpdateStatus → Lambda updateStatus
-  → DynamoDB.update (status: "completed")
+#### 1. Dominio (Domain)
+- **Entidades**: `Appointment` - Representa la cita médica
+- **Interfaces**: `IAppointmentRepo`, `IAppointmentPublisher`
+- **Value Objects**: `InsuredId`, `ScheduleId`, `CountryISO`
+
+#### 2. Aplicación (Application)
+- **Casos de Uso**:
+  - `CreateAppointment`: Creación de citas
+  - `GetAppointment`: Consulta de citas
+- **DTOs**: Objetos de transferencia de datos
+- **Validaciones**: Reglas de negocio y validaciones
+
+#### 3. Infraestructura (Infrastructure)
+- **Repositorios**: `DynamoAppointmentRepo`
+- **Publicadores**: `SnsAppointmentPublisher`
+- **Handlers**: Manejadores de eventos Lambda
+- **Facades**: `AppointmentInfraFacade`
+
+### Componentes AWS
+- **API Gateway**: Endpoints REST
+- **Lambda**: Funciones serverless
+- **DynamoDB**: Almacenamiento de citas
+- **SNS**: Publicación de eventos
+- **SQS**: Colas de procesamiento por país
+- **EventBridge**: Manejo de eventos de estado
+
+## Estructura del Proyecto
+```
+src/
+├── domain/
+│   ├── entities/
+│   └── interfaces/
+├── application/
+│   └── useCases/
+├── infrastructure/
+│   ├── dynamo/
+│   ├── sns/
+│   └── facades/
+└── handlers/
 ```
 
----
+## Endpoints API
 
-## Principios aplicados
+### POST /appointment
+Crea una nueva cita médica.
 
-### Arquitectura limpia
-- Separación clara entre dominio, aplicación, infraestructura y entrada.
+**Request:**
+```json
+{
+  "insuredId": "string",
+  "scheduleId": "number",
+  "countryISO": "PE|CL"
+}
+```
 
-### Principios SOLID
-- **S**: Una clase = una responsabilidad.
-- **O**: Se puede extender con nuevas clases sin modificar.
-- **D**: Los casos de uso dependen de interfaces, no de clases concretas.
+**Response (201):**
+```json
+{
+  "insuredId": "string",
+  "scheduleId": "number",
+  "countryISO": "string",
+  "status": "pending",
+  "createdAt": "string"
+}
+```
 
-### Patrones usados
-- **Repository**: abstrae el acceso a la base de datos.
-- **Facade**: coordina guardar + publicar, ocultando infraestructura.
+### GET /appointment/{insuredId}
+Consulta una cita por ID de asegurado.
 
----
+**Response (200):**
+```json
+{
+  "insuredId": "string",
+  "scheduleId": "number",
+  "countryISO": "string",
+  "status": "string",
+  "createdAt": "string"
+}
+```
 
-## Cómo ejecutar el proyecto
+## Flujo de Procesamiento
 
+1. **Creación de Cita**:
+   - Validación de datos
+   - Persistencia en DynamoDB
+   - Publicación en SNS
+
+2. **Procesamiento por País**:
+   - Filtrado por `countryISO` (PE/CL)
+   - Procesamiento en colas específicas
+   - Actualización de estado
+
+3. **Consulta de Cita**:
+   - Validación de `insuredId`
+   - Búsqueda en DynamoDB
+   - Retorno de datos
+
+## Despliegue
+
+### Prerrequisitos
+- Node.js 18.x
+- AWS CLI configurado
+- Serverless Framework
+
+### Instalación
 ```bash
 npm install
-npx serverless deploy
 ```
 
-### Probar API con curl:
-
+### Despliegue
 ```bash
-curl -X POST https://<tu-api>/appointment   -H "Content-Type: application/json"   -d '{"insuredId":"00001","scheduleId":123,"countryISO":"PE"}'
+serverless deploy
 ```
 
----
+### Variables de Entorno
+- `APPOINTMENTS_TABLE`: Tabla DynamoDB
+- `SNS_TOPIC_ARN`: ARN del tópico SNS
 
-## Estructura del proyecto
+## Testing
 
-```txt
-src/
-├── application/
-│   └── useCases/CreateAppointment.ts
-├── domain/
-│   └── entities/Appointment.ts
-├── infrastructure/
-│   ├── dynamo/AppointmentRepo.ts
-│   ├── sns/SnsAppointmentPublisher.ts
-│   ├── facades/AppointmentInfraFacade.ts
-│   ├── eventbridge/Publisher.ts
-│   └── dynamo/Updater.ts
-├── handlers/
-│   ├── appointment.ts
-│   ├── appointmentPE.ts
-│   ├── appointmentCL.ts
-│   └── updateStatus.ts
+### Pruebas Unitarias
+```bash
+npm test
 ```
 
----
+### Estructura de Tests
+```
+__tests__/
+├── CreateAppointment.test.ts
+├── GetAppointment.test.ts
+└── AppointmentInfraFacade.test.ts
+```
 
-## Autor
+## Consideraciones Técnicas
 
-Desarrollado como solución al reto técnico de Rimac.
+### Seguridad
+- Validación de datos de entrada
+- IAM roles con permisos mínimos
+- CORS configurado
+
+### Escalabilidad
+- Arquitectura serverless
+- Procesamiento asíncrono
+- Colas de mensajes
+
+### Monitoreo
+- CloudWatch Logs
+- Métricas de Lambda
+- Trazas X-Ray
+
+## Mejoras Futuras
+1. Implementar autenticación
+2. Agregar más validaciones de negocio
+3. Implementar cache con Redis
+4. Mejorar manejo de errores
+5. Agregar más endpoints (actualización, cancelación)
+
+## Contribución
+1. Fork del repositorio
+2. Crear rama feature
+3. Commit cambios
+4. Push a la rama
+5. Crear Pull Request
+
+## Licencia
+Este proyecto es propiedad de Rimac Seguros.
