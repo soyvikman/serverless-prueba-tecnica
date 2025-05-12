@@ -1,0 +1,31 @@
+{
+  "name": "rimac-citas",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "coverage": "jest --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "aws-sdk": "^2.1692.0",
+    "redoc": "^2.5.0",
+    "swagger-ui-dist": "^5.21.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@serverless/typescript": "^4.14.1",
+    "@types/aws-lambda": "^8.10.149",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.8",
+    "@types/swagger-ui-dist": "^3.30.5",
+    "jest": "^29.7.0",
+    "serverless": "^4.14.2",
+    "serverless-esbuild": "^1.55.0",
+    "ts-jest": "^29.3.2",
+    "typescript": "^5.8.3"
+  }
+}

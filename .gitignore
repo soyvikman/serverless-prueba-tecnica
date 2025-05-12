@@ -1,0 +1,34 @@
+# Node
+node_modules/
+package-lock.json
+
+# Serverless framework
+.serverless/
+.mfa-token
+
+# TypeScript build output
+dist/
+build/
+*.js
+*.js.map
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Env files
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage (si usas tests)
+coverage/
+nyc_output/
+
+# Mac/Linux/Windows system files
+.DS_Store
+Thumbs.db
