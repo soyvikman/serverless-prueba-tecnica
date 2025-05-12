@@ -145,36 +145,5 @@ __tests__/
 └── AppointmentInfraFacade.test.ts
 ```
 
-## Consideraciones Técnicas
-
-### Seguridad
-- Validación de datos de entrada
-- IAM roles con permisos mínimos
-- CORS configurado
-
-### Escalabilidad
-- Arquitectura serverless
-- Procesamiento asíncrono
-- Colas de mensajes
-
-### Monitoreo
-- CloudWatch Logs
-- Métricas de Lambda
-- Trazas X-Ray
-
-## Mejoras Futuras
-1. Implementar autenticación
-2. Agregar más validaciones de negocio
-3. Implementar cache con Redis
-4. Mejorar manejo de errores
-5. Agregar más endpoints (actualización, cancelación)
-
-## Contribución
-1. Fork del repositorio
-2. Crear rama feature
-3. Commit cambios
-4. Push a la rama
-5. Crear Pull Request
-
 ## Licencia
 Este proyecto es propiedad de Rimac Seguros.
