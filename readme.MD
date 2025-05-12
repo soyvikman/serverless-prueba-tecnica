@@ -3,6 +3,16 @@
 ## Descripción General
 Sistema serverless para la gestión de citas médicas, implementado con Clean Architecture y desplegado en AWS. El sistema permite crear y consultar citas médicas, con procesamiento asíncrono por país (Perú y Chile).
 
+## Endpoints desplegados
+
+
+### Post
+https://6jgzt7f1mg.execute-api.us-east-1.amazonaws.com/appointment
+
+### Get
+
+https://6jgzt7f1mg.execute-api.us-east-1.amazonaws.com/appointment/{insuredId}
+
 ## Arquitectura
 
 ### Principios de Diseño
